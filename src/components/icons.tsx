@@ -18,19 +18,22 @@ import {
   Settings,
   MoreHorizontal,
   Save,
-  Lightbulb, 
-  Bell,      
-  Tag,       
-  Archive,   
-  RefreshCw, 
-  LayoutGrid, 
-  List, 
-  Menu, 
-  Bot, 
+  Lightbulb,
+  Bell,
+  Tag,
+  Archive,
+  RefreshCw,
+  LayoutGrid,
+  List,
+  Menu,
+  Bot,
   Palette,
   Pin,
   PinOff,
-  Image as ImageIcon, // For a generic image icon if needed
+  Image as ImageIcon,
+  CheckSquare,
+  User,
+  SendHorizontal, // Added Send icon
 } from 'lucide-react';
 
 export const Icons = {
@@ -54,7 +57,7 @@ export const Icons = {
   Bell: Bell,
   Tag: Tag,
   Archive: Archive,
-  Trash: Trash2, 
+  Trash: Trash2,
   Refresh: RefreshCw,
   GridView: LayoutGrid,
   ListView: List,
@@ -64,6 +67,9 @@ export const Icons = {
   Pin: Pin,
   PinOff: PinOff,
   Image: ImageIcon,
+  CheckSquare: CheckSquare,
+  User: User,
+  Send: SendHorizontal,
 };
 
 export type IconName = keyof typeof Icons;

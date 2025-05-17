@@ -26,15 +26,17 @@ export interface Note {
   title: string;
   content: string; // For text notes, or raw input for list notes before parsing
   items?: NoteListItem[]; // For list notes
-  type?: 'text' | 'list';
-  color?: string | null; // HSL string e.g., 'hsl(30, 100%, 90%)' or null for default
-  imageUrl?: string | null; // URL for an image associated with the note
-  pinned?: boolean; // Whether the note is pinned
+  type: 'text' | 'list'; // Made type mandatory
+  color: string | null;
+  imageUrl: string | null;
+  pinned: boolean;
   notebookId: string;
-  folderId: string | null; // ID of parent folder, or null if directly under a notebook
+  folderId: string | null;
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
   summary?: string; // Optional AI-generated summary
+  status: 'active' | 'archived' | 'trashed';
+  deletedAt?: string | null;
 }
 
 // For AI Query results
@@ -58,4 +60,20 @@ export interface TreeItem {
   icon?: React.ElementType; // Lucide icon component
   notebookId?: string; // For folders and notes
   folderId?: string; // For notes
+}
+
+// For AI Chat History
+export interface ChatMessageContent {
+  answer?: string;
+  references?: QueryReference[];
+  error?: string;
+  isLoading?: boolean; // Added to indicate AI is processing
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  queryText?: string; // For user messages
+  content: ChatMessageContent; // For assistant messages (answer, references, error, or loading state)
+  timestamp: string; // ISO date string
 }
