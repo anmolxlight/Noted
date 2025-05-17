@@ -2,9 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+  The body font is now primarily managed by Tailwind's font-sans utility,
+  which is configured in tailwind.config.ts to use var(--font-geist-sans).
+  The var(--font-geist-sans) is made available via the className on the <html> tag in layout.tsx.
+*/
+/*
 body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+*/
 
 @layer base {
   :root {
