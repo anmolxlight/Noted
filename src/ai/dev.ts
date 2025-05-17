@@ -1,1 +1,5 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/import-and-summarize.ts';
+import '@/ai/flows/query-notes.ts';

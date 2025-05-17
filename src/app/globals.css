@@ -3,78 +3,91 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
+    --background: 60 56% 91%; /* Light Beige (#F5F5DC) */
+    --foreground: 60 10% 25%; /* Dark, slightly desaturated warm gray */
+
+    --card: 60 56% 93%; /* Slightly lighter Beige for cards */
+    --card-foreground: 60 10% 25%;
+
+    --popover: 60 50% 88%; /* Slightly darker beige for popovers */
+    --popover-foreground: 60 10% 25%;
+
+    --primary: 197 38% 44%; /* Deep Teal (#468499) */
+    --primary-foreground: 200 20% 98%; /* Off-white/Light Gray for contrast on Teal */
+
+    --secondary: 197 38% 75%; /* Lighter Teal for secondary elements */
+    --secondary-foreground: 197 38% 20%; /* Darker Teal text on Lighter Teal bg */
+
+    --muted: 60 40% 88%; /* Muted beige */
+    --muted-foreground: 60 10% 45%; /* Darker muted text */
+
+    --accent: 43 90% 38%; /* Muted Gold (#B8860B) */
+    --accent-foreground: 45 30% 98%; /* Off-white/Light Gray for contrast on Gold */
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
+
+    --border: 60 30% 82%; /* Slightly darker beige for borders */
+    --input: 60 30% 85%; /* Slightly lighter beige for input */
+    --ring: 197 38% 44%; /* Teal for focus rings */
+
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --sidebar-background: 197 30% 30%; /* Darker shade of Teal */
+    --sidebar-foreground: 197 20% 90%;   /* Off-white, slightly blueish */
+    --sidebar-primary: 43 90% 50%; /* Gold for active items in sidebar, slightly brighter */
+    --sidebar-primary-foreground: 45 25% 95%; /* Very light text on gold */
+    --sidebar-accent: 197 30% 38%; /* Teal hover, slightly lighter than bg */
+    --sidebar-accent-foreground: 197 20% 95%;
+    --sidebar-border: 197 30% 25%; /* Darkest Teal for border */
+    --sidebar-ring: 43 90% 55%; /* Gold for focus ring */
   }
+
   .dark {
-    --background: 0 0% 3.9%;
+    /* Keeping dark theme consistent with original, but can be customized further */
+    --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
+    --card: 240 10% 3.9%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
+    --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
+    --primary: 197 38% 50%; /* Adjusted Teal for dark mode */
+    --primary-foreground: 197 20% 10%;
+    --secondary: 197 38% 20%; /* Adjusted Secondary Teal for dark mode */
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 43 90% 45%; /* Adjusted Gold for dark mode */
+    --accent-foreground: 45 20% 10%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 197 38% 50%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --sidebar-background: 240 5% 10%; /* Darker sidebar for dark mode */
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 43 90% 55%; /* Brighter Gold for dark mode sidebar */
+    --sidebar-primary-foreground: 43 25% 10%;
+    --sidebar-accent: 240 5% 15%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 240 5% 12%;
+    --sidebar-ring: 43 90% 60%;
   }
 }
 
