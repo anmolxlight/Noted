@@ -56,21 +56,25 @@ export default {
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
   			},
-  			sidebar: {
-  				DEFAULT: 'hsl(var(--sidebar-background))',
-  				foreground: 'hsl(var(--sidebar-foreground))',
-  				primary: 'hsl(var(--sidebar-primary))',
-  				'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-  				accent: 'hsl(var(--sidebar-accent))',
-  				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-  				border: 'hsl(var(--sidebar-border))',
-  				ring: 'hsl(var(--sidebar-ring))'
-  			}
+        // Keep-specific theme variables, can be removed if globals.css handles all
+        'app-sidebar': {
+          background: 'hsl(var(--app-sidebar-background))',
+          foreground: 'hsl(var(--app-sidebar-foreground))',
+          'selected-background': 'hsl(var(--app-sidebar-selected-background))',
+          'selected-foreground': 'hsl(var(--app-sidebar-selected-foreground))',
+          'hover-background': 'hsl(var(--app-sidebar-hover-background))',
+          'hover-foreground': 'hsl(var(--app-sidebar-hover-foreground))',
+        },
+        'app-header': {
+          background: 'hsl(var(--app-header-background))',
+          border: 'hsl(var(--app-header-border))',
+        }
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			sm: 'calc(var(--radius) - 4px)',
+        'full': '9999px', // Ensure full is available for rounded-full
   		},
   		keyframes: {
   			'accordion-down': {

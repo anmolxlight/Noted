@@ -1,68 +1,70 @@
+
 "use client";
 
-import {
-  Sidebar,
-  SidebarProvider,
-  SidebarHeader,
-  SidebarContent,
-  SidebarFooter,
-  SidebarTrigger,
-  SidebarInset,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { Icons } from "@/components/icons";
-import { SidebarNav } from "@/components/sidebar/sidebar-nav";
-import { NoteEditor } from "@/components/note/note-editor";
-import { AiQueryPanel } from "@/components/ai/ai-query-panel";
-import { Separator } from "@/components/ui/separator";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-
+import { useState } from 'react';
+import { SidebarProvider, Sidebar, SidebarContent, SidebarInset } from "@/components/ui/sidebar";
+import { AppHeader } from "./app-header";
+import { AppSidebar } from "./app-sidebar";
+import { TakeANoteInput } from "@/components/note/take-a-note-input";
+import { NoteCard } from "@/components/note/note-card";
+import { AiFloatingButton } from "@/components/ai/ai-floating-button";
+import { AiFloatingPanel } from "@/components/ai/ai-floating-panel";
+import { useNoteWiseStore, useSelectedNote } from '@/lib/store'; // Assuming notes are fetched here
+import type { Note } from '@/types';
 
 export function AppLayout() {
+  const notes = useNoteWiseStore(state => state.notes);
+  const selectedNote = useSelectedNote(); // This might be used if a note card click opens a modal
+  const [isAiPanelOpen, setIsAiPanelOpen] = useState(false);
+
+  const handleNoteCardClick = (noteId: string) => {
+    // TODO: Implement opening a note editor modal or expanded view
+    console.log("Note card clicked:", noteId);
+    // useNoteWiseStore.getState().selectNote(noteId);
+  };
+  
+  // Filter out the currently selected note if it's being edited elsewhere (e.g. a modal)
+  // For now, just display all notes.
+  const notesToDisplay = notes;
+
+
   return (
-    <SidebarProvider defaultOpen={true}>
-      <Sidebar variant="sidebar" collapsible="icon" className="border-r">
-        <SidebarHeader className="p-2 border-b">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-primary">
-              <Icons.Notebook className="h-6 w-6" />
-            </Button>
-            <h1 className="text-xl font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">NoteWise AI</h1>
-          </div>
-        </SidebarHeader>
-        <SidebarContent className="p-0">
-          <SidebarNav />
-        </SidebarContent>
-        <SidebarFooter className="p-2 border-t group-data-[collapsible=icon]:hidden">
-            <p className="text-xs text-sidebar-foreground/70 text-center">
-                &copy; {new Date().getFullYear()} NoteWise AI
-            </p>
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset className="flex flex-col bg-background">
-        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-10">
-            <SidebarTrigger className="md:hidden" /> {/* Mobile trigger */}
-            <div className="flex-1">
-                <h2 className="text-lg font-semibold text-foreground">My Notes</h2>
+    <SidebarProvider defaultOpen={true}> {/* Manages mobile sidebar state */}
+      <div className="flex flex-col h-screen">
+        <AppHeader />
+        <div className="flex flex-1 overflow-hidden">
+          {/* ShadCN Sidebar for mobile drawer functionality */}
+          <Sidebar side="left" collapsible="offcanvas" className="bg-app-sidebar-background w-64 shrink-0 border-r md:block hidden">
+            {/* collapsible="offcanvas" makes it a drawer on mobile, normal on desktop */}
+            {/* className applied to the fixed desktop sidebar */}
+            <SidebarContent className="p-0">
+              <AppSidebar />
+            </SidebarContent>
+          </Sidebar>
+          {/* Main content area */}
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-background">
+            <TakeANoteInput />
+            <div 
+              className="mt-8 columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-4"
+              style={{ columnFill: 'balance' }} // Helps with masonry-like layout
+            >
+              {notesToDisplay.length > 0 ? (
+                notesToDisplay.map((note: Note) => (
+                  <div key={note.id} className="mb-4 break-inside-avoid"> {/* Wrapper for break-inside */}
+                    <NoteCard note={note} onClick={() => handleNoteCardClick(note.id)} />
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full text-center text-muted-foreground py-10">
+                  <p>No notes yet. Try creating one!</p>
+                </div>
+              )}
             </div>
-            {/* Add any header actions here, e.g., global search, user profile */}
-        </header>
-        <main className="flex-1 flex flex-col p-4 lg:p-6 gap-4 overflow-auto">
-            <ResizablePanelGroup direction="vertical" className="min-h-[calc(100vh-100px)]">
-              <ResizablePanel defaultSize={60} minSize={30}>
-                <div className="h-full">
-                  <NoteEditor />
-                </div>
-              </ResizablePanel>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={40} minSize={20}>
-                <div className="h-full">
-                  <AiQueryPanel />
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-        </main>
-      </SidebarInset>
+          </main>
+        </div>
+        <AiFloatingButton onClick={() => setIsAiPanelOpen(true)} />
+        <AiFloatingPanel isOpen={isAiPanelOpen} onOpenChange={setIsAiPanelOpen} />
+      </div>
     </SidebarProvider>
   );
 }

@@ -12,6 +12,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
+// This component is not directly used in the new Google Keep-style layout's main page.
+// It's kept here as it might be repurposed for a modal/dialog when a note card is clicked for editing.
+// The original functionality for line highlighting and autosave is preserved.
+
 export function NoteEditor() {
   const selectedNote = useSelectedNote();
   const updateNote = useNoteWiseStore(state => state.updateNote);
@@ -27,7 +31,6 @@ export function NoteEditor() {
     if (selectedNote) {
       setTitle(selectedNote.title);
       setContent(selectedNote.content);
-      // Client-side date formatting
       setFormattedUpdatedAt(new Date(selectedNote.updatedAt).toLocaleString());
       setHasChanges(false);
     } else {
@@ -59,15 +62,10 @@ export function NoteEditor() {
     }
   }, [selectedNote, title, content, updateNote, hasChanges, toast]);
   
-  // Autosave on unmount or note change if there are changes
   useEffect(() => {
     return () => {
       if (hasChanges && selectedNote) {
-        // This is a bit problematic with strict mode double invocation in dev
-        // For a real app, debounce or more sophisticated save logic is needed.
-        // For now, simple save on unmount.
         updateNote(selectedNote.id, { title, content });
-         // Cannot toast here as component is unmounting.
       }
     };
   }, [hasChanges, selectedNote, title, content, updateNote]);
@@ -82,7 +80,7 @@ export function NoteEditor() {
           </CardHeader>
           <CardContent>
             <Icons.Note className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Select a note from the sidebar to view or edit its content.</p>
+            <p className="text-muted-foreground">Select a note to view or edit its content.</p>
           </CardContent>
         </Card>
       </div>
@@ -91,18 +89,18 @@ export function NoteEditor() {
 
   const lines = content.split('\n');
   const isNoteHighlighted = highlightedLinesState?.noteId === selectedNote.id;
-  const highlightLinesSet = isNoteHighlighted ? new Set(highlightedLinesState.lines.map(l => l - 1)) : new Set<number>(); // 0-indexed
+  const highlightLinesSet = isNoteHighlighted ? new Set(highlightedLinesState.lines.map(l => l - 1)) : new Set<number>();
 
   return (
-    <Card className="h-full flex flex-col shadow-lg rounded-lg overflow-hidden">
-      <CardHeader className="border-b">
+    <Card className="h-full flex flex-col shadow-lg rounded-lg overflow-hidden bg-card">
+      <CardHeader className="border-b p-4">
         <Input
           value={title}
           onChange={handleTitleChange}
           placeholder="Note Title"
-          className="text-2xl font-bold border-0 shadow-none focus-visible:ring-0 p-0 h-auto"
+          className="text-xl font-semibold border-0 shadow-none focus-visible:ring-0 p-0 h-auto bg-transparent"
         />
-        <CardDescription>
+        <CardDescription className="text-xs mt-1">
           Last updated: {formattedUpdatedAt || "Loading..."}
         </CardDescription>
       </CardHeader>
@@ -114,11 +112,11 @@ export function NoteEditor() {
                         <div 
                             key={index} 
                             className={cn(
-                                "min-h-[1.5em] px-2 rounded-sm", // Ensure line takes up space
+                                "min-h-[1.5em] px-2 rounded-sm",
                                 highlightLinesSet.has(index) && "bg-accent/30"
                             )}
                         >
-                            {line || '\u00A0'} {/* Render non-breaking space for empty lines to maintain height */}
+                            {line || '\u00A0'}
                         </div>
                     ))}
                  </div>
@@ -127,13 +125,13 @@ export function NoteEditor() {
                     value={content}
                     onChange={handleContentChange}
                     placeholder="Start typing your note here..."
-                    className="h-full w-full border-0 rounded-none resize-none focus-visible:ring-0 p-4 font-mono text-sm leading-relaxed"
+                    className="h-full w-full border-0 rounded-none resize-none focus-visible:ring-0 p-4 font-mono text-sm leading-relaxed bg-transparent"
                 />
             )}
         </ScrollArea>
       </CardContent>
-      <CardFooter className="border-t p-4">
-        <Button onClick={handleSave} disabled={!hasChanges} className="flex items-center gap-2">
+      <CardFooter className="border-t p-3 flex justify-end">
+        <Button onClick={handleSave} disabled={!hasChanges} className="flex items-center gap-2" size="sm">
           <Icons.Save className="h-4 w-4" /> Save Changes
         </Button>
       </CardFooter>
