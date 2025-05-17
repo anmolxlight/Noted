@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Icons } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSidebar } from "@/components/ui/sidebar";
-import { useNoteWiseStore } from '@/lib/store'; // Import the store
+import { useNoteWiseStore } from '@/lib/store';
+import { ThemeToggle } from '@/components/ui/theme-toggle'; // Updated import path
 
 export function AppHeader() {
   const { toggleSidebar, isMobile } = useSidebar();
@@ -21,7 +22,7 @@ export function AppHeader() {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalSearchTerm(e.target.value);
-    setSearchTerm(e.target.value); // Update store immediately or use debounce
+    setSearchTerm(e.target.value);
   };
 
   return (
@@ -59,6 +60,7 @@ export function AppHeader() {
           <Icons.Settings className="h-5 w-5" />
           <span className="sr-only">Settings</span>
         </Button>
+        <ThemeToggle /> 
         <Avatar className="h-8 w-8">
           <AvatarImage src="https://placehold.co/40x40.png" alt="User Avatar" data-ai-hint="user avatar" />
           <AvatarFallback>U</AvatarFallback>
