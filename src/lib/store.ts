@@ -1,5 +1,6 @@
+
 import { create } from 'zustand';
-import type { Notebook, Folder, Note, AIQueryResponse, QueryReference } from '@/types';
+import type { Notebook, Folder, Note, AIQueryResponse, NoteListItem } from '@/types';
 import { importAndSummarize } from '@/ai/flows/import-and-summarize';
 import { queryNotes as queryNotesFlow } from '@/ai/flows/query-notes';
 
@@ -24,6 +25,7 @@ interface NoteWiseState {
   deleteNote: (noteId: string) => void;
   deleteFolder: (folderId: string) => void;
   deleteNotebook: (notebookId: string) => void;
+  toggleNoteListItem: (noteId: string, itemId: string) => void;
 
   selectNotebook: (notebookId: string | null) => void;
   selectFolder: (folderId: string | null) => void;
@@ -42,11 +44,15 @@ const createId = () => Math.random().toString(36).substr(2, 9);
 const initialNotebookId = createId();
 const initialFolderId = createId();
 const initialNoteId = createId();
+const initialListNoteId = createId();
 
 export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
   notebooks: [{ id: initialNotebookId, name: 'My First Notebook', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
   folders: [{ id: initialFolderId, name: 'General Thoughts', notebookId: initialNotebookId, parentId: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-  notes: [{ id: initialNoteId, title: 'Welcome to NoteWise AI!', content: 'This is your first note.\nStart organizing your thoughts and query them with AI.\nTry asking a question about this note in the AI Panel!', notebookId: initialNotebookId, folderId: initialFolderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), summary: 'A welcome note.' }],
+  notes: [
+    { id: initialNoteId, title: 'Welcome to NoteWise AI!', content: 'This is your first note.\nStart organizing your thoughts and query them with AI.\nTry asking a question about this note in the AI Panel!', type: 'text', notebookId: initialNotebookId, folderId: initialFolderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), summary: 'A welcome note.' },
+    { id: initialListNoteId, title: 'My Shopping List', content: '- Milk\n- Eggs []\n- Bread [x]', type: 'list', items: [{id: createId(), text: 'Milk', checked: false}, {id: createId(), text: 'Eggs', checked: false}, {id: createId(), text: 'Bread', checked: true}], notebookId: initialNotebookId, folderId: initialFolderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), summary: 'A sample shopping list' }
+  ],
   selectedNotebookId: initialNotebookId,
   selectedFolderId: initialFolderId,
   selectedNoteId: initialNoteId,
@@ -65,15 +71,79 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
     set(state => ({ folders: [...state.folders, newFolder] }));
     return newFolder;
   },
-  addNote: (title, notebookId, folderId = null, content = '') => {
-    const newNote: Note = { id: createId(), title, content, notebookId, folderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-    set(state => ({ notes: [...state.notes, newNote] }));
+  addNote: (title, notebookId, folderId = null, rawContent = '') => {
+    const lines = rawContent.split('\n');
+    const listItems: NoteListItem[] = [];
+    let noteType: 'text' | 'list' = 'text';
+
+    if (lines.some(line => line.trim().startsWith('[] ') || line.trim().startsWith('- ') || line.trim().match(/^\[([xX ])\] /))) {
+      noteType = 'list';
+      lines.forEach(line => {
+        const text = line.replace(/^(\[([xX ])\] |\[\] |- )/, '').trim();
+        if (text) { // Only add if there's actual text after the prefix
+          const match = line.match(/^\[([xX])\] /); // Check for [x] or [X]
+          listItems.push({
+            id: createId(),
+            text: text,
+            checked: !!match, 
+          });
+        } else if (line.trim().startsWith('[] ') || line.trim().startsWith('- ')) { // Handle empty item prefixed lines
+           listItems.push({
+            id: createId(),
+            text: '',
+            checked: false,
+          });
+        }
+      });
+    }
+    
+    const newNote: Note = { 
+      id: createId(), 
+      title, 
+      content: rawContent, // Store original raw content
+      items: noteType === 'list' ? listItems : undefined,
+      type: noteType,
+      notebookId, 
+      folderId, 
+      createdAt: new Date().toISOString(), 
+      updatedAt: new Date().toISOString() 
+    };
+    set(state => ({ notes: [newNote, ...state.notes] })); // Add to the top of the list
     get().selectNote(newNote.id);
     return newNote;
   },
   updateNote: (noteId, updates) => {
     set(state => ({
-      notes: state.notes.map(note => note.id === noteId ? { ...note, ...updates, updatedAt: new Date().toISOString() } : note)
+      notes: state.notes.map(note => {
+        if (note.id === noteId) {
+          const updatedNote = { ...note, ...updates, updatedAt: new Date().toISOString() };
+          // If content is updated for a list note, re-parse items
+          if (updates.content && updatedNote.type === 'list') {
+            const lines = updatedNote.content.split('\n');
+            const newListItems: NoteListItem[] = [];
+            lines.forEach(line => {
+              const text = line.replace(/^(\[([xX ])\] |\[\] |- )/, '').trim();
+               if (text) {
+                const match = line.match(/^\[([xX])\] /);
+                newListItems.push({
+                  id: createId(), // Consider preserving IDs if possible, but for now new IDs
+                  text: text,
+                  checked: !!match,
+                });
+              } else if (line.trim().startsWith('[] ') || line.trim().startsWith('- ')) {
+                 newListItems.push({
+                  id: createId(),
+                  text: '',
+                  checked: false,
+                });
+              }
+            });
+            updatedNote.items = newListItems;
+          }
+          return updatedNote;
+        }
+        return note;
+      })
     }));
   },
   deleteNote: (noteId) => {
@@ -86,7 +156,7 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
   deleteFolder: (folderId) => {
     set(state => ({
       folders: state.folders.filter(folder => folder.id !== folderId),
-      notes: state.notes.filter(note => note.folderId !== folderId), // Also delete notes in this folder
+      notes: state.notes.filter(note => note.folderId !== folderId), 
       selectedFolderId: state.selectedFolderId === folderId ? null : state.selectedFolderId,
       selectedNoteId: state.notes.find(n => n.id === state.selectedNoteId)?.folderId === folderId ? null : state.selectedNoteId,
     }));
@@ -101,6 +171,22 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
       selectedNoteId: state.notes.find(n => n.id === state.selectedNoteId)?.notebookId === notebookId ? null : state.selectedNoteId,
     }));
   },
+  toggleNoteListItem: (noteId, itemId) => {
+    set(state => ({
+      notes: state.notes.map(note => {
+        if (note.id === noteId && note.type === 'list' && note.items) {
+          return {
+            ...note,
+            items: note.items.map(item =>
+              item.id === itemId ? { ...item, checked: !item.checked } : item
+            ),
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        return note;
+      })
+    }));
+  },
   selectNotebook: (notebookId) => set({ selectedNotebookId: notebookId, selectedFolderId: null, selectedNoteId: null, highlightedLines: null }),
   selectFolder: (folderId) => {
     const folder = get().folders.find(f => f.id === folderId);
@@ -113,30 +199,74 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
   
   importNoteFromFile: async (file, notebookId, folderId = null) => {
     const content = await file.text();
-    let title = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+    let title = file.name.replace(/\.[^/.]+$/, ""); 
     let summary = '';
 
-    try {
-      const summaryResult = await importAndSummarize({ noteContent: content });
-      summary = summaryResult.summary;
-      // Optionally use summary to improve title if needed, or set it as note's summary
-      if (summary.length > 0 && title.length < 5) { // Basic heuristic
-         title = summary.substring(0,50) + (summary.length > 50 ? '...' : '');
-      }
-    } catch (error) {
-      console.error("Error summarizing imported note:", error);
-      // Proceed without summary
+    // Determine if it's a list note from file content
+    const lines = content.split('\n');
+    const listItems: NoteListItem[] = [];
+    let noteType: 'text' | 'list' = 'text';
+
+    if (lines.some(line => line.trim().startsWith('[] ') || line.trim().startsWith('- ') || line.trim().match(/^\[([xX ])\] /))) {
+      noteType = 'list';
+      lines.forEach(line => {
+        const text = line.replace(/^(\[([xX ])\] |\[\] |- )/, '').trim();
+        if (text) {
+          const match = line.match(/^\[([xX])\] /);
+          listItems.push({
+            id: createId(),
+            text: text,
+            checked: !!match,
+          });
+        } else if (line.trim().startsWith('[] ') || line.trim().startsWith('- ')) {
+           listItems.push({
+            id: createId(),
+            text: '',
+            checked: false,
+          });
+        }
+      });
     }
     
-    const newNote: Note = { id: createId(), title, content, notebookId, folderId, summary, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-    set(state => ({ notes: [...state.notes, newNote] }));
+    // Generate summary for text notes or potentially from list items
+    const contentForSummary = noteType === 'list' ? listItems.map(item => item.text).join('\n') : content;
+
+    if (contentForSummary.trim()) {
+      try {
+        const summaryResult = await importAndSummarize({ noteContent: contentForSummary });
+        summary = summaryResult.summary;
+        if (summary.length > 0 && title.length < 5) { 
+           title = summary.substring(0,50) + (summary.length > 50 ? '...' : '');
+        }
+      } catch (error) {
+        console.error("Error summarizing imported note:", error);
+      }
+    }
+    
+    const newNote: Note = { 
+      id: createId(), 
+      title, 
+      content, // Store raw content
+      items: noteType === 'list' ? listItems : undefined,
+      type: noteType,
+      summary, 
+      notebookId, 
+      folderId, 
+      createdAt: new Date().toISOString(), 
+      updatedAt: new Date().toISOString() 
+    };
+    set(state => ({ notes: [newNote, ...state.notes] }));
     get().selectNote(newNote.id);
     return newNote;
   },
 
   queryNotes: async (question) => {
     set({ isAiLoading: true, aiResponse: null, aiQuestion: question, highlightedLines: null });
-    const notesToQuery = get().notes.map(note => ({ title: note.title, content: note.content }));
+    const notesToQuery = get().notes.map(note => ({ 
+        title: note.title, 
+        content: note.type === 'list' && note.items ? note.items.map(item => `${item.checked ? '[x]' : '[]'} ${item.text}`).join('\n') : note.content 
+    }));
+
     if (notesToQuery.length === 0) {
       set({ isAiLoading: false, aiResponse: { answer: "No notes available to query.", references: [] } });
       return;
@@ -183,4 +313,3 @@ export const useFolderContents = (folderId: string | null) => {
   const notesInFolder = notes.filter(n => n.folderId === folderId);
   return { subFolders, notesInFolder };
 };
-

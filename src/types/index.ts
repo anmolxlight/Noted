@@ -1,3 +1,4 @@
+
 export interface Notebook {
   id: string;
   name: string;
@@ -14,10 +15,18 @@ export interface Folder {
   updatedAt: string; // ISO date string
 }
 
+export interface NoteListItem {
+  id: string;
+  text: string;
+  checked: boolean;
+}
+
 export interface Note {
   id: string;
   title: string;
-  content: string;
+  content: string; // For text notes, or raw input for list notes before parsing
+  items?: NoteListItem[]; // For list notes
+  type?: 'text' | 'list';
   notebookId: string;
   folderId: string | null; // ID of parent folder, or null if directly under a notebook
   createdAt: string; // ISO date string
