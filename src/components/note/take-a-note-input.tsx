@@ -1,40 +1,68 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/icons';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '../ui/textarea';
+import { useNoteWiseStore } from '@/lib/store';
+import { useToast } from '@/hooks/use-toast';
 
 export function TakeANoteInput() {
   const [isFocused, setIsFocused] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const addNote = useNoteWiseStore(state => state.addNote);
+  const selectedNotebookId = useNoteWiseStore(state => state.selectedNotebookId);
+  const selectedFolderId = useNoteWiseStore(state => state.selectedFolderId);
+  const { toast } = useToast();
 
   const handleFocus = () => setIsFocused(true);
   
-  const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
-    // Check if the new focused element is part of this component
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      if (!title && !content) {
+  const handleClickOutside = (event: MouseEvent) => {
+    if (cardRef.current && !cardRef.current.contains(event.target as Node)) {
+      if (title || content) {
+        handleSave();
+      } else {
         setIsFocused(false);
       }
     }
   };
 
+  useEffect(() => {
+    if (isFocused) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isFocused, title, content]); // Re-add listener if title/content changes to ensure save logic
+
   const handleSave = () => {
-    if (title || content) {
-      // Logic to save the note (e.g., call a store action)
-      console.log("Saving note:", { title, content });
+    if (title.trim() || content.trim()) {
+      if (!selectedNotebookId) {
+        toast({
+          title: "Error",
+          description: "No notebook selected. Please select or create a notebook first.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const newNote = addNote(title.trim() || "Untitled Note", selectedNotebookId, selectedFolderId, content.trim());
+      toast({
+        title: "Note Created",
+        description: `"${newNote.title}" has been saved.`,
+      });
       setTitle('');
       setContent('');
-      setIsFocused(false);
-      // Potentially add to notes list and re-render
-    } else {
-      setIsFocused(false);
     }
+    setIsFocused(false); // Always unfocus after attempting save or if empty
   };
 
   if (!isFocused) {
@@ -49,7 +77,7 @@ export function TakeANoteInput() {
         <Input
           type="text"
           placeholder="Take a note..."
-          className="w-full border-none focus-visible:ring-0 py-3 px-4 text-base placeholder:text-muted-foreground"
+          className="w-full border-none focus-visible:ring-0 py-3 px-4 text-base placeholder:text-muted-foreground bg-transparent"
           readOnly
         />
       </div>
@@ -57,21 +85,21 @@ export function TakeANoteInput() {
   }
 
   return (
-    <Card className="mx-auto my-8 max-w-xl shadow-lg" onBlur={handleBlur}>
+    <Card className="mx-auto my-8 max-w-xl shadow-lg" ref={cardRef}>
       <CardContent className="p-0">
         <Input
           type="text"
           placeholder="Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full border-none focus-visible:ring-0 py-3 px-4 text-base font-medium"
+          className="w-full border-none focus-visible:ring-0 py-3 px-4 text-base font-medium bg-transparent"
           autoFocus
         />
         <Textarea
           placeholder="Take a note..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="w-full border-none focus-visible:ring-0 resize-none min-h-[80px] py-3 px-4 text-sm"
+          className="w-full border-none focus-visible:ring-0 resize-none min-h-[80px] py-3 px-4 text-sm bg-transparent"
           rows={3}
         />
         <div className="flex justify-between items-center p-2 px-4 border-t">
@@ -92,3 +120,4 @@ export function TakeANoteInput() {
     </Card>
   );
 }
+
