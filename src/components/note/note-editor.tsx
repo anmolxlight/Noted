@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -19,16 +20,20 @@ export function NoteEditor() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
+  const [formattedUpdatedAt, setFormattedUpdatedAt] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     if (selectedNote) {
       setTitle(selectedNote.title);
       setContent(selectedNote.content);
+      // Client-side date formatting
+      setFormattedUpdatedAt(new Date(selectedNote.updatedAt).toLocaleString());
       setHasChanges(false);
     } else {
       setTitle('');
       setContent('');
+      setFormattedUpdatedAt(null);
       setHasChanges(false);
     }
   }, [selectedNote]);
@@ -98,7 +103,7 @@ export function NoteEditor() {
           className="text-2xl font-bold border-0 shadow-none focus-visible:ring-0 p-0 h-auto"
         />
         <CardDescription>
-          Last updated: {new Date(selectedNote.updatedAt).toLocaleString()}
+          Last updated: {formattedUpdatedAt || "Loading..."}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow p-0 relative">
