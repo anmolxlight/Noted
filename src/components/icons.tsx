@@ -27,7 +27,10 @@ import {
   List, 
   Menu, 
   Bot, 
-  Palette, // Added Palette
+  Palette,
+  Pin,
+  PinOff,
+  Image as ImageIcon, // For a generic image icon if needed
 } from 'lucide-react';
 
 export const Icons = {
@@ -57,7 +60,10 @@ export const Icons = {
   ListView: List,
   Menu: Menu,
   Bot: Bot,
-  Palette: Palette, // Added Palette
+  Palette: Palette,
+  Pin: Pin,
+  PinOff: PinOff,
+  Image: ImageIcon,
 };
 
 export type IconName = keyof typeof Icons;

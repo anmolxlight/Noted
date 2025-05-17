@@ -28,6 +28,8 @@ export interface Note {
   items?: NoteListItem[]; // For list notes
   type?: 'text' | 'list';
   color?: string | null; // HSL string e.g., 'hsl(30, 100%, 90%)' or null for default
+  imageUrl?: string | null; // URL for an image associated with the note
+  pinned?: boolean; // Whether the note is pinned
   notebookId: string;
   folderId: string | null; // ID of parent folder, or null if directly under a notebook
   createdAt: string; // ISO date string

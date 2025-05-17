@@ -1,14 +1,28 @@
 
 "use client";
 
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Icons } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSidebar } from "@/components/ui/sidebar"; // Assuming you might want to toggle on mobile
+import { useSidebar } from "@/components/ui/sidebar";
+import { useNoteWiseStore } from '@/lib/store'; // Import the store
 
 export function AppHeader() {
-  const { toggleSidebar, isMobile } = useSidebar(); // Get toggleSidebar and isMobile
+  const { toggleSidebar, isMobile } = useSidebar();
+  const searchTerm = useNoteWiseStore(state => state.searchTerm);
+  const setSearchTerm = useNoteWiseStore(state => state.setSearchTerm);
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
+
+  useEffect(() => {
+    setLocalSearchTerm(searchTerm);
+  }, [searchTerm]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalSearchTerm(e.target.value);
+    setSearchTerm(e.target.value); // Update store immediately or use debounce
+  };
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-app-header-background px-4 md:px-6 shrink-0">
@@ -27,6 +41,8 @@ export function AppHeader() {
         <Input
           type="search"
           placeholder="Search notes..."
+          value={localSearchTerm}
+          onChange={handleSearchChange}
           className="w-full rounded-lg bg-background pl-8 md:w-[300px] lg:w-[400px]"
         />
       </div>

@@ -17,6 +17,8 @@ interface NoteWiseState {
   isAiLoading: boolean;
   highlightedLines: { noteId: string; lines: number[] } | null;
 
+  searchTerm: string; // For client-side search
+
   // Actions
   addNotebook: (name: string) => Notebook;
   addFolder: (name: string, notebookId: string, parentId?: string | null) => Folder;
@@ -27,6 +29,8 @@ interface NoteWiseState {
   deleteNotebook: (notebookId: string) => void;
   toggleNoteListItem: (noteId: string, itemId: string) => void;
   updateNoteColor: (noteId: string, color: string | null) => void;
+  updateNoteImage: (noteId: string, imageUrl: string | null) => void;
+  togglePinNote: (noteId: string) => void;
 
   selectNotebook: (notebookId: string | null) => void;
   selectFolder: (folderId: string | null) => void;
@@ -38,6 +42,7 @@ interface NoteWiseState {
   clearAiResponse: () => void;
   setHighlightedLines: (noteId: string, lines: number[]) => void;
   clearHighlightedLines: () => void;
+  setSearchTerm: (term: string) => void;
 }
 
 const createId = () => Math.random().toString(36).substr(2, 9);
@@ -46,13 +51,15 @@ const initialNotebookId = createId();
 const initialFolderId = createId();
 const initialNoteId = createId();
 const initialListNoteId = createId();
+const initialImageNoteId = createId();
 
 export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
   notebooks: [{ id: initialNotebookId, name: 'My First Notebook', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
   folders: [{ id: initialFolderId, name: 'General Thoughts', notebookId: initialNotebookId, parentId: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
   notes: [
-    { id: initialNoteId, title: 'Welcome to NoteWise AI!', content: 'This is your first note.\nStart organizing your thoughts and query them with AI.\nTry asking a question about this note in the AI Panel!', type: 'text', color: null, notebookId: initialNotebookId, folderId: initialFolderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), summary: 'A welcome note.' },
-    { id: initialListNoteId, title: 'My Shopping List', content: '- Milk\n- Eggs []\n- Bread [x]', type: 'list', items: [{id: createId(), text: 'Milk', checked: false}, {id: createId(), text: 'Eggs', checked: false}, {id: createId(), text: 'Bread', checked: true}], color: 'hsl(50, 95%, 90%)', notebookId: initialNotebookId, folderId: initialFolderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), summary: 'A sample shopping list' }
+    { id: initialNoteId, title: 'Welcome to NoteWise AI!', content: 'This is your first note.\nStart organizing your thoughts and query them with AI.\nTry asking a question about this note in the AI Panel!', type: 'text', color: null, imageUrl: null, pinned: false, notebookId: initialNotebookId, folderId: initialFolderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), summary: 'A welcome note.' },
+    { id: initialListNoteId, title: 'My Shopping List', content: '- Milk\n- Eggs []\n- Bread [x]', type: 'list', items: [{id: createId(), text: 'Milk', checked: false}, {id: createId(), text: 'Eggs', checked: false}, {id: createId(), text: 'Bread', checked: true}], color: 'hsl(50, 95%, 90%)', imageUrl: null, pinned: false, notebookId: initialNotebookId, folderId: initialFolderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), summary: 'A sample shopping list' },
+    { id: initialImageNoteId, title: 'Beautiful Scenery', content: 'A note with a placeholder image.', type: 'text', color: 'hsl(200, 80%, 90%)', imageUrl: 'https://placehold.co/600x400.png', pinned: true, notebookId: initialNotebookId, folderId: initialFolderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), summary: 'Note with an image.' }
   ],
   selectedNotebookId: initialNotebookId,
   selectedFolderId: initialFolderId,
@@ -61,6 +68,7 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
   aiResponse: null,
   isAiLoading: false,
   highlightedLines: null,
+  searchTerm: '',
 
   addNotebook: (name) => {
     const newNotebook: Notebook = { id: createId(), name, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
@@ -81,14 +89,14 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
       noteType = 'list';
       lines.forEach(line => {
         const text = line.replace(/^(\[([xX ])\] |\[\] |- )/, '').trim();
-        if (text) { // Only add if there's actual text after the prefix
-          const match = line.match(/^\[([xX])\] /); // Check for [x] or [X]
+        if (text) { 
+          const match = line.match(/^\[([xX])\] /); 
           listItems.push({
             id: createId(),
             text: text,
             checked: !!match, 
           });
-        } else if (line.trim().startsWith('[] ') || line.trim().startsWith('- ')) { // Handle empty item prefixed lines
+        } else if (line.trim().startsWith('[] ') || line.trim().startsWith('- ')) { 
            listItems.push({
             id: createId(),
             text: '',
@@ -101,16 +109,18 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
     const newNote: Note = { 
       id: createId(), 
       title, 
-      content: rawContent, // Store original raw content
+      content: rawContent, 
       items: noteType === 'list' ? listItems : undefined,
       type: noteType,
-      color: null, // Default to no color
+      color: null, 
+      imageUrl: null,
+      pinned: false,
       notebookId, 
       folderId, 
       createdAt: new Date().toISOString(), 
       updatedAt: new Date().toISOString() 
     };
-    set(state => ({ notes: [newNote, ...state.notes] })); // Add to the top of the list
+    set(state => ({ notes: [newNote, ...state.notes] })); 
     get().selectNote(newNote.id);
     return newNote;
   },
@@ -119,7 +129,6 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
       notes: state.notes.map(note => {
         if (note.id === noteId) {
           const updatedNote = { ...note, ...updates, updatedAt: new Date().toISOString() };
-          // If content is updated for a list note, re-parse items
           if (updates.content && updatedNote.type === 'list') {
             const lines = updatedNote.content.split('\n');
             const newListItems: NoteListItem[] = [];
@@ -128,7 +137,7 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
                if (text) {
                 const match = line.match(/^\[([xX])\] /);
                 newListItems.push({
-                  id: createId(), // Consider preserving IDs if possible, but for now new IDs
+                  id: createId(), 
                   text: text,
                   checked: !!match,
                 });
@@ -196,6 +205,21 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
       ),
     }));
   },
+  updateNoteImage: (noteId, imageUrl) => {
+    set(state => ({
+      notes: state.notes.map(note =>
+        note.id === noteId ? { ...note, imageUrl, updatedAt: new Date().toISOString() } : note
+      ),
+    }));
+  },
+  togglePinNote: (noteId) => {
+    set(state => ({
+      notes: state.notes.map(note =>
+        note.id === noteId ? { ...note, pinned: !note.pinned, updatedAt: new Date().toISOString() } : note
+      ),
+    }));
+  },
+
   selectNotebook: (notebookId) => set({ selectedNotebookId: notebookId, selectedFolderId: null, selectedNoteId: null, highlightedLines: null }),
   selectFolder: (folderId) => {
     const folder = get().folders.find(f => f.id === folderId);
@@ -211,7 +235,6 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
     let title = file.name.replace(/\.[^/.]+$/, ""); 
     let summary = '';
 
-    // Determine if it's a list note from file content
     const lines = content.split('\n');
     const listItems: NoteListItem[] = [];
     let noteType: 'text' | 'list' = 'text';
@@ -237,7 +260,6 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
       });
     }
     
-    // Generate summary for text notes or potentially from list items
     const contentForSummary = noteType === 'list' ? listItems.map(item => item.text).join('\n') : content;
 
     if (contentForSummary.trim()) {
@@ -255,11 +277,13 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
     const newNote: Note = { 
       id: createId(), 
       title, 
-      content, // Store raw content
+      content, 
       items: noteType === 'list' ? listItems : undefined,
       type: noteType,
       summary, 
-      color: null, // Default to no color for imported notes
+      color: null, 
+      imageUrl: null,
+      pinned: false,
       notebookId, 
       folderId, 
       createdAt: new Date().toISOString(), 
@@ -293,6 +317,7 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
   clearAiResponse: () => set({ aiResponse: null, aiQuestion: '', highlightedLines: null }),
   setHighlightedLines: (noteId, lines) => set({ highlightedLines: { noteId, lines } }),
   clearHighlightedLines: () => set({ highlightedLines: null }),
+  setSearchTerm: (term: string) => set({ searchTerm: term }),
 }));
 
 // Helper to get selected note object
