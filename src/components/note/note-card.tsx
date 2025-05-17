@@ -103,6 +103,7 @@ export function NoteCard({ note, onClick }: NoteCardProps) {
         tabIndex={0}
         onKeyPress={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick?.();}}
         aria-label={`Note titled ${note.title || 'Untitled'}`}
+        style={{ backgroundColor: note.color || undefined }}
     >
       <CardHeader className="pb-2 pt-4 px-4">
         {note.title && <CardTitle className="text-base font-medium leading-snug break-words">{note.title}</CardTitle>}
@@ -114,6 +115,9 @@ export function NoteCard({ note, onClick }: NoteCardProps) {
         <div className="flex gap-1 opacity-0 group-hover/notecard:opacity-100 focus-within:opacity-100 transition-opacity duration-150">
             <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" aria-label="Add reminder">
                 <Icons.Bell className="h-4 w-4" />
+            </Button>
+             <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" aria-label="Change color">
+                <Icons.Palette className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" aria-label="Archive note">
                 <Icons.Archive className="h-4 w-4" />

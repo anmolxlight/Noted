@@ -1,3 +1,4 @@
+
 import {
   Book,
   Folder as FolderIcon,
@@ -17,15 +18,16 @@ import {
   Settings,
   MoreHorizontal,
   Save,
-  Lightbulb, // Added
-  Bell,      // Added
-  Tag,       // Added (using Tag, Tags is also an option)
-  Archive,   // Added
-  RefreshCw, // For refresh icon
-  LayoutGrid, // For grid view
-  List, // For list view
-  Menu, // For sidebar toggle on mobile
-  Bot, // For AI floater
+  Lightbulb, 
+  Bell,      
+  Tag,       
+  Archive,   
+  RefreshCw, 
+  LayoutGrid, 
+  List, 
+  Menu, 
+  Bot, 
+  Palette, // Added Palette
 } from 'lucide-react';
 
 export const Icons = {
@@ -49,12 +51,13 @@ export const Icons = {
   Bell: Bell,
   Tag: Tag,
   Archive: Archive,
-  Trash: Trash2, // Already exists, re-confirming use
+  Trash: Trash2, 
   Refresh: RefreshCw,
   GridView: LayoutGrid,
   ListView: List,
   Menu: Menu,
   Bot: Bot,
+  Palette: Palette, // Added Palette
 };
 
 export type IconName = keyof typeof Icons;

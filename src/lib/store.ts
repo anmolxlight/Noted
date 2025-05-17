@@ -26,6 +26,7 @@ interface NoteWiseState {
   deleteFolder: (folderId: string) => void;
   deleteNotebook: (notebookId: string) => void;
   toggleNoteListItem: (noteId: string, itemId: string) => void;
+  updateNoteColor: (noteId: string, color: string | null) => void;
 
   selectNotebook: (notebookId: string | null) => void;
   selectFolder: (folderId: string | null) => void;
@@ -50,8 +51,8 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
   notebooks: [{ id: initialNotebookId, name: 'My First Notebook', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
   folders: [{ id: initialFolderId, name: 'General Thoughts', notebookId: initialNotebookId, parentId: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
   notes: [
-    { id: initialNoteId, title: 'Welcome to NoteWise AI!', content: 'This is your first note.\nStart organizing your thoughts and query them with AI.\nTry asking a question about this note in the AI Panel!', type: 'text', notebookId: initialNotebookId, folderId: initialFolderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), summary: 'A welcome note.' },
-    { id: initialListNoteId, title: 'My Shopping List', content: '- Milk\n- Eggs []\n- Bread [x]', type: 'list', items: [{id: createId(), text: 'Milk', checked: false}, {id: createId(), text: 'Eggs', checked: false}, {id: createId(), text: 'Bread', checked: true}], notebookId: initialNotebookId, folderId: initialFolderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), summary: 'A sample shopping list' }
+    { id: initialNoteId, title: 'Welcome to NoteWise AI!', content: 'This is your first note.\nStart organizing your thoughts and query them with AI.\nTry asking a question about this note in the AI Panel!', type: 'text', color: null, notebookId: initialNotebookId, folderId: initialFolderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), summary: 'A welcome note.' },
+    { id: initialListNoteId, title: 'My Shopping List', content: '- Milk\n- Eggs []\n- Bread [x]', type: 'list', items: [{id: createId(), text: 'Milk', checked: false}, {id: createId(), text: 'Eggs', checked: false}, {id: createId(), text: 'Bread', checked: true}], color: 'hsl(50, 95%, 90%)', notebookId: initialNotebookId, folderId: initialFolderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), summary: 'A sample shopping list' }
   ],
   selectedNotebookId: initialNotebookId,
   selectedFolderId: initialFolderId,
@@ -103,6 +104,7 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
       content: rawContent, // Store original raw content
       items: noteType === 'list' ? listItems : undefined,
       type: noteType,
+      color: null, // Default to no color
       notebookId, 
       folderId, 
       createdAt: new Date().toISOString(), 
@@ -187,6 +189,13 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
       })
     }));
   },
+  updateNoteColor: (noteId, color) => {
+    set(state => ({
+      notes: state.notes.map(note =>
+        note.id === noteId ? { ...note, color, updatedAt: new Date().toISOString() } : note
+      ),
+    }));
+  },
   selectNotebook: (notebookId) => set({ selectedNotebookId: notebookId, selectedFolderId: null, selectedNoteId: null, highlightedLines: null }),
   selectFolder: (folderId) => {
     const folder = get().folders.find(f => f.id === folderId);
@@ -250,6 +259,7 @@ export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
       items: noteType === 'list' ? listItems : undefined,
       type: noteType,
       summary, 
+      color: null, // Default to no color for imported notes
       notebookId, 
       folderId, 
       createdAt: new Date().toISOString(), 
