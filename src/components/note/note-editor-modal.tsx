@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogClose,
+  // DialogHeader, // Not explicitly used for title in this design
+  // DialogTitle, // Not explicitly used for title in this design
+  // DialogFooter, // Custom footer structure
+  // DialogClose, // Custom close handling
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,19 +28,17 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from '../ui/separator';
 
 const createId = () => Math.random().toString(36).substr(2, 9);
 
 export function NoteEditorModal() {
+  const editingNoteId = useNoteWiseStore(state => state.editingNoteId);
   const editingNote = useNoteWiseStore(state => state.notes.find(n => n.id === state.editingNoteId));
   const setEditingNoteId = useNoteWiseStore(state => state.setEditingNoteId);
   const updateNote = useNoteWiseStore(state => state.updateNote);
   const togglePinNote = useNoteWiseStore(state => state.togglePinNote);
   const trashNote = useNoteWiseStore(state => state.trashNote);
-  const updateNoteColor = useNoteWiseStore(state => state.updateNoteColor);
-  // List item actions from store are not directly used here, local state handles items during edit
-
+  
   const [currentTitle, setCurrentTitle] = useState('');
   const [currentContent, setCurrentContent] = useState('');
   const [currentItems, setCurrentItems] = useState<NoteListItem[]>([]);
@@ -54,6 +52,12 @@ export function NoteEditorModal() {
   const { toast } = useToast();
   const contentAreaRef = useRef<HTMLDivElement>(null); 
 
+  const markChanges = useCallback(() => {
+    if (!hasChanges) {
+        setHasChanges(true);
+    }
+  }, [hasChanges]);
+
   useEffect(() => {
     if (editingNote) {
       setCurrentTitle(editingNote.title || '');
@@ -61,22 +65,23 @@ export function NoteEditorModal() {
       setCurrentItems(editingNote.items ? JSON.parse(JSON.stringify(editingNote.items)) : []);
       setCurrentImageUrl(editingNote.imageUrl || null);
       setCurrentColor(editingNote.color || null);
-      setFormattedUpdatedAt(new Date(editingNote.updatedAt).toLocaleString());
+      setFormattedUpdatedAt(new Date(editingNote.updatedAt).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }));
       setShowImageUrlInput(!!editingNote.imageUrl);
-      setHasChanges(false); 
+      setHasChanges(false); // Reset changes flag when a new note is loaded or modal re-opens
     } else {
+      // Reset all fields when modal is closed or no note is being edited
       setCurrentTitle('');
       setCurrentContent('');
       setCurrentItems([]);
       setCurrentImageUrl(null);
       setCurrentColor(null);
+      setFormattedUpdatedAt(null);
       setShowImageUrlInput(false);
       setNewListItemText('');
       setHasChanges(false);
     }
   }, [editingNote]);
 
-  const markChanges = useCallback(() => setHasChanges(true), []);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCurrentTitle(e.target.value);
@@ -93,28 +98,23 @@ export function NoteEditorModal() {
     markChanges();
   };
   
-  const handleColorChange = (color: string | null) => {
-    if (!editingNote) return;
-    // updateNoteColor(editingNote.id, color); // Store update is deferred to saveChanges for consistency
+  const handleColorChangeInPopover = (color: string | null) => {
     setCurrentColor(color);
     markChanges();
-    // toast({ title: "Color Updated", description: "Note color has been changed." }); // Toast on save
   };
 
   const handlePinToggle = () => {
     if (!editingNote) return;
-    togglePinNote(editingNote.id);
+    togglePinNote(editingNote.id); // Store handles immediate update for pinned status
     toast({ title: editingNote.pinned ? "Note Unpinned" : "Note Pinned" });
-    // Pin status is directly updated in store, no need to markChanges for this specific attribute if store handles it live.
-    // However, if we want the modal's save to be the single source of truth, we'd manage a local pin state too.
-    // For simplicity with direct store update, we assume `togglePinNote` is sufficient and visible.
+    // Pin status is reflected immediately from store, `hasChanges` not strictly needed for this for modal save
   };
 
   const handleDeleteNote = () => {
     if (!editingNote) return;
     trashNote(editingNote.id);
     toast({ title: "Note Deleted", description: `"${editingNote.title || 'Untitled Note'}" moved to trash.` });
-    setEditingNoteId(null); 
+    setEditingNoteId(null); // Close modal after deleting
   };
 
   const handleItemTextChange = (itemId: string, newText: string) => {
@@ -128,11 +128,22 @@ export function NoteEditorModal() {
   };
 
   const handleAddListItem = () => {
-    if (!editingNote || !newListItemText.trim()) return;
+    if (!editingNote || !newListItemText.trim()) {
+        if (newListItemText.trim()) { // if there's text, add it
+             const newItem: NoteListItem = { id: createId(), text: newListItemText.trim(), checked: false };
+             setCurrentItems(prevItems => [...prevItems, newItem]);
+             setNewListItemText('');
+             markChanges();
+        }
+        // If newListItemText is empty, we might want to focus the next input or do nothing.
+        // For now, just clear and mark changes if text was added.
+        return;
+    }
     const newItem: NoteListItem = { id: createId(), text: newListItemText.trim(), checked: false };
     setCurrentItems(prevItems => [...prevItems, newItem]);
-    setNewListItemText('');
+    setNewListItemText(''); // Clear input for next item
     markChanges();
+    // Optionally, focus the newListItemText input again or the newly created item's input
   };
   
   const handleDeleteListItem = (itemId: string) => {
@@ -141,13 +152,12 @@ export function NoteEditorModal() {
   };
 
   const handleSaveChanges = useCallback(() => {
-    if (!editingNote || !hasChanges) {
-      return false; // No changes or no note to save
-    }
+    if (!editingNote) return false; // No note to save
+    if (!hasChanges) return false; // No changes made
 
     const updatedNoteData: Partial<Note> = {
-      title: currentTitle,
-      content: editingNote.type === 'text' ? currentContent : '',
+      title: currentTitle.trim(),
+      content: editingNote.type === 'text' ? currentContent.trim() : '', // Save trimmed content
       items: editingNote.type === 'list' ? currentItems : undefined,
       imageUrl: currentImageUrl,
       color: currentColor,
@@ -155,14 +165,14 @@ export function NoteEditorModal() {
     };
     
     updateNote(editingNote.id, updatedNoteData);
-    toast({ title: "Note Saved", description: `"${currentTitle || 'Untitled Note'}" has been updated.` });
+    // toast({ title: "Note Saved", description: `"${currentTitle || 'Untitled Note'}" has been updated.` });
     setHasChanges(false); // Reset after saving
     return true;
-  }, [editingNote, currentTitle, currentContent, currentItems, currentImageUrl, currentColor, updateNote, toast, hasChanges]);
+  }, [editingNote, currentTitle, currentContent, currentItems, currentImageUrl, currentColor, updateNote, hasChanges, toast]);
 
   const handleClose = () => {
-    handleSaveChanges(); // Attempt to save changes
-    setEditingNoteId(null); // Then close the modal
+    handleSaveChanges(); 
+    setEditingNoteId(null); 
   };
 
   if (!editingNote) {
@@ -171,25 +181,25 @@ export function NoteEditorModal() {
 
   return (
     <Dialog open={!!editingNote} onOpenChange={(open) => {
-      if (!open) { // Dialog is attempting to close
+      if (!open) { 
         handleClose();
       }
-      // If open is true, it's opening, no action needed here as it's controlled by editingNoteId
     }}>
       <DialogContent 
-        className="sm:max-w-lg p-0 flex flex-col max-h-[90vh]" 
+        className="sm:max-w-lg p-0 flex flex-col max-h-[90vh] shadow-xl" 
         style={{ backgroundColor: currentColor || undefined }}
-        onPointerDownOutside={(e) => {
-          if ((e.target as HTMLElement).closest('[data-radix-popper-content-wrapper]')) {
+        onPointerDownOutside={(e) => { // Prevent closing when interacting with popovers
+          if ((e.target as HTMLElement).closest('[data-radix-popper-content-wrapper]') || (e.target as HTMLElement).closest('.note-color-popover-trigger')) {
             e.preventDefault();
           }
         }}
-        onInteractOutside={(e) => {
-             if ((e.target as HTMLElement).closest('[data-radix-popper-content-wrapper]')) {
+        onInteractOutside={(e) => { // Prevent closing when interacting with popovers
+             if ((e.target as HTMLElement).closest('[data-radix-popper-content-wrapper]') || (e.target as HTMLElement).closest('.note-color-popover-trigger')) {
                 e.preventDefault();
             }
         }}
       >
+        {/* Top section: Title and Pin/Bell icons */}
         <div className="px-4 pt-4 pb-2 flex items-start justify-between gap-2">
           <Input
             value={currentTitle}
@@ -201,12 +211,14 @@ export function NoteEditorModal() {
             <Button variant="ghost" size="icon" onClick={handlePinToggle} className="h-8 w-8 text-muted-foreground hover:text-foreground">
               {editingNote.pinned ? <Icons.PinOff className="h-5 w-5 text-primary" /> : <Icons.Pin className="h-5 w-5" />}
             </Button>
+            {/* Placeholder for Bell icon based on screenshot */}
             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
               <Icons.Bell className="h-5 w-5" />
             </Button>
           </div>
         </div>
 
+        {/* Image Area */}
         {currentImageUrl && (
           <div className="relative w-full aspect-[16/9] overflow-hidden my-2 px-4">
             <Image src={currentImageUrl} alt={currentTitle || "Note image"} layout="fill" objectFit="cover" data-ai-hint="note image" />
@@ -219,15 +231,16 @@ export function NoteEditorModal() {
                     placeholder="Image URL (e.g., https://placehold.co/600x400.png)"
                     value={currentImageUrl || ''}
                     onChange={handleImageUrlChange}
-                    className="h-8 text-sm"
+                    className="h-8 text-sm bg-transparent/50"
                 />
             </div>
         )}
 
-        <ScrollArea className="flex-grow min-h-[150px] px-4 pb-2" ref={contentAreaRef}>
+        {/* Content Area */}
+        <ScrollArea className="flex-grow min-h-[150px] max-h-[50vh] px-4 pb-2" ref={contentAreaRef}>
           {editingNote.type === 'list' ? (
             <div className="space-y-2 mt-1">
-              {currentItems.map((item) => (
+              {currentItems.map((item, index) => (
                 <div key={item.id} className="flex items-center gap-2 group">
                   <Checkbox
                     id={`modal-item-${item.id}`}
@@ -243,6 +256,19 @@ export function NoteEditorModal() {
                       "h-auto p-0 border-none focus-visible:ring-0 bg-transparent text-sm flex-grow",
                       item.checked && "line-through text-muted-foreground"
                     )}
+                     onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            // Potentially add new item or move to next, for now just basic handling
+                            const nextInput = e.currentTarget.parentElement?.nextElementSibling?.querySelector('input');
+                            if (nextInput) {
+                                (nextInput as HTMLInputElement).focus();
+                            } else {
+                                handleAddListItem(); // Or focus the "add item" input
+                                setTimeout(() => document.getElementById('new-list-item-input')?.focus(), 0);
+                            }
+                        }
+                    }}
                   />
                   <Button
                     variant="ghost"
@@ -255,17 +281,18 @@ export function NoteEditorModal() {
                   </Button>
                 </div>
               ))}
-              <div className="flex items-center gap-2 pl-6"> {/* Aligned with checkbox */}
+              {/* Add new list item input */}
+              <div className="flex items-center gap-2 pl-[calc(1rem_-_2px)]"> {/* Align with checkbox + gap */}
+                <Icons.Add className="h-4 w-4 text-muted-foreground shrink-0" />
                 <Input
+                    id="new-list-item-input"
                     value={newListItemText}
                     onChange={(e) => setNewListItemText(e.target.value)}
-                    placeholder="Add item"
+                    placeholder="List item"
                     onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddListItem();}}}
                     className="h-auto p-0 border-none focus-visible:ring-0 bg-transparent text-sm flex-grow"
                 />
-                <Button variant="ghost" size="icon" onClick={handleAddListItem} className="text-primary h-7 w-7" aria-label="Add list item">
-                    <Icons.Add className="h-4 w-4" />
-                </Button>
+                 {/* Hidden button to submit, or rely on Enter */}
               </div>
             </div>
           ) : (
@@ -278,16 +305,13 @@ export function NoteEditorModal() {
           )}
         </ScrollArea>
 
-        <div className="flex items-center justify-between gap-1 p-2 border-t border-border/50">
-          <div className="flex items-center gap-0.5">
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label="Reminders (placeholder)">
-              <Icons.Bell className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label="Collaborators (placeholder)">
+        {/* Footer Toolbar */}
+        <div className="flex items-center justify-start gap-0.5 p-2 px-3 border-t border-border/30">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label="Collaborators (placeholder)" disabled>
               <Icons.UserPlus className="h-4 w-4" />
             </Button>
             <NoteColorPopover note={editingNote} onOpenChange={() => {}} >
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label="Change color">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground note-color-popover-trigger" aria-label="Change color">
                     <Icons.Palette className="h-4 w-4" />
                 </Button>
             </NoteColorPopover>
@@ -296,7 +320,7 @@ export function NoteEditorModal() {
                 aria-label={showImageUrlInput ? "Hide image URL input" : "Show image URL input"}>
               <Icons.Image className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label="Archive (placeholder)">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label="Archive (placeholder)" disabled>
               <Icons.Archive className="h-4 w-4" />
             </Button>
             <DropdownMenu>
@@ -305,32 +329,36 @@ export function NoteEditorModal() {
                         <Icons.More className="h-4 w-4" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" sideOffset={5}>
                     <DropdownMenuItem onClick={(e) => {e.stopPropagation(); handleDeleteNote();}}>
                         <Icons.Trash className="mr-2 h-4 w-4" /> Delete note
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={(e) => e.stopPropagation()} disabled>
+                    <DropdownMenuItem onClick={(e) => {e.stopPropagation(); /* TODO: Implement Make a copy */}} disabled>
                         <Icons.Copy className="mr-2 h-4 w-4" /> Make a copy
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
+            <div className="flex-grow"></div> {/* Spacer */}
             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label="Undo (placeholder)" disabled>
               <Icons.Undo className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" aria-label="Redo (placeholder)" disabled>
               <Icons.Redo className="h-4 w-4" />
             </Button>
-          </div>
-          <div className="flex items-center">
+        </div>
+
+        {/* Bottom Status Line: "Edited at" and "Close" button */}
+        <div className="flex items-center justify-between p-2 px-4 pt-0 ">
             {formattedUpdatedAt && (
-              <span className="text-xs text-muted-foreground mr-3">
+              <span className="text-xs text-muted-foreground">
                 Edited {formattedUpdatedAt}
               </span>
             )}
+            <div className="flex-grow"></div> {/* Spacer to push Close button to the right if no timestamp */}
             <Button variant="ghost" size="sm" onClick={handleClose} className="h-8">Close</Button>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
