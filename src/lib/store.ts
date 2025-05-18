@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import type { Notebook, Folder, Note, AIQueryResponse, NoteListItem, ChatMessage, ChatMessageContent } from '@/types';
 import { importAndSummarize } from '@/ai/flows/import-and-summarize';
@@ -62,19 +61,26 @@ interface NoteWiseState {
 }
 
 const createId = () => Math.random().toString(36).substr(2, 9);
+// Static IDs for initial sample data to ensure consistent SSR and hydration
+const initialNotebookId = 'notebook-1';
+const initialFolderId = 'folder-1';
+const initialNoteId = 'note-1';
+const initialListNoteId = 'note-2';
+const initialImageNoteId = 'note-3';
 
-const initialNotebookId = createId();
-const initialFolderId = createId();
-const initialNoteId = createId();
-const initialListNoteId = createId();
-const initialImageNoteId = createId();
+// Initial shopping list items with static IDs
+const initialShoppingListItems = [
+  { id: 'listitem-1', text: 'Milk', checked: false },
+  { id: 'listitem-2', text: 'Eggs', checked: false },
+  { id: 'listitem-3', text: 'Bread', checked: true },
+];
 
 export const useNoteWiseStore = create<NoteWiseState>((set, get) => ({
   notebooks: [{ id: initialNotebookId, name: 'My First Notebook', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
   folders: [{ id: initialFolderId, name: 'General Thoughts', notebookId: initialNotebookId, parentId: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
   notes: [
     { id: initialNoteId, title: 'Welcome to NoteWise AI!', content: 'This is your first note.\nStart organizing your thoughts and query them with AI.\nTry asking a question about this note in the AI Panel!', type: 'text', color: null, imageUrl: null, pinned: false, notebookId: initialNotebookId, folderId: initialFolderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), summary: 'A welcome note.', status: 'active' },
-    { id: initialListNoteId, title: 'My Shopping List', content: '', type: 'list', items: [{id: createId(), text: 'Milk', checked: false}, {id: createId(), text: 'Eggs', checked: false}, {id: createId(), text: 'Bread', checked: true}], color: 'hsl(50, 95%, 90%)', imageUrl: null, pinned: false, notebookId: initialNotebookId, folderId: initialFolderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), summary: 'A sample shopping list', status: 'active' },
+    { id: initialListNoteId, title: 'My Shopping List', content: '', type: 'list', items: initialShoppingListItems, color: 'hsl(50, 95%, 90%)', imageUrl: null, pinned: false, notebookId: initialNotebookId, folderId: initialFolderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), summary: 'A sample shopping list', status: 'active' },
     { id: initialImageNoteId, title: 'Beautiful Scenery', content: 'A note with a placeholder image.', type: 'text', color: 'hsl(200, 80%, 90%)', imageUrl: 'https://placehold.co/600x400.png', pinned: true, notebookId: initialNotebookId, folderId: initialFolderId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), summary: 'Note with an image.', status: 'active' }
   ],
   selectedNotebookId: initialNotebookId,

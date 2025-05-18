@@ -1,4 +1,3 @@
-
 import {
   Book,
   Folder as FolderIcon,
@@ -28,11 +27,15 @@ import {
   Menu,
   Bot,
   Palette,
+  Copy,
   Pin,
   PinOff,
   Image as ImageIcon,
   CheckSquare,
   User,
+  UserPlus,
+  Undo,
+  Redo,
   SendHorizontal, // Added Send icon
 } from 'lucide-react';
 
@@ -57,6 +60,7 @@ export const Icons = {
   Bell: Bell,
   Tag: Tag,
   Archive: Archive,
+  Copy: Copy,
   Trash: Trash2,
   Refresh: RefreshCw,
   GridView: LayoutGrid,
@@ -69,6 +73,9 @@ export const Icons = {
   Image: ImageIcon,
   CheckSquare: CheckSquare,
   User: User,
+  UserPlus: UserPlus,
+  Undo: Undo,
+  Redo: Redo,
   Send: SendHorizontal,
 };
 

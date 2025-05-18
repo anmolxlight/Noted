@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -12,16 +11,16 @@ import { AiFloatingPanel } from "@/components/ai/ai-floating-panel";
 import { useNoteWiseStore } from '@/lib/store';
 import type { Note } from '@/types';
 import { Separator } from '@/components/ui/separator';
+import { NoteEditorModal } from "@/components/note/note-editor-modal";
 
 export function AppLayout() {
   const allNotes = useNoteWiseStore(state => state.notes);
   const searchTerm = useNoteWiseStore(state => state.searchTerm);
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(false);
+  const setEditingNoteId = useNoteWiseStore(state => state.setEditingNoteId);
 
   const handleNoteCardClick = (noteId: string) => {
-    // TODO: Implement opening a note editor modal or expanded view
-    console.log("Note card clicked:", noteId);
-    // useNoteWiseStore.getState().selectNote(noteId);
+    setEditingNoteId(noteId);
   };
 
   const filteredNotes = useMemo(() => {
@@ -106,6 +105,7 @@ export function AppLayout() {
         </div>
         <AiFloatingButton onClick={() => setIsAiPanelOpen(true)} />
         <AiFloatingPanel isOpen={isAiPanelOpen} onOpenChange={setIsAiPanelOpen} />
+        <NoteEditorModal />
       </div>
     </SidebarProvider>
   );
