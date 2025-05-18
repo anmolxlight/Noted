@@ -1,1 +1,1 @@
-# AI Note taking app
+AI Note taking app
